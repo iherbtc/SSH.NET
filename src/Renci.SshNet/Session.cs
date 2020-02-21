@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -440,11 +440,6 @@ namespace Renci.SshNet
         internal event EventHandler<MessageEventArgs<KeyExchangeDhReplyMessage>> KeyExchangeDhReplyMessageReceived;
 
         /// <summary>
-        /// Occurs when a <see cref="KeyExchangeEcdhReplyMessage"/> message is received from the SSH server.
-        /// </summary>
-        internal event EventHandler<MessageEventArgs<KeyExchangeEcdhReplyMessage>> KeyExchangeEcdhReplyMessageReceived;
-
-        /// <summary>
         /// Occurs when <see cref="NewKeysMessage"/> message received
         /// </summary>
         internal event EventHandler<MessageEventArgs<NewKeysMessage>> NewKeysReceived;
@@ -606,6 +601,9 @@ namespace Renci.SshNet
                             break;
                     }
 
+                    // Send our identification string before waiting for server's, as mandated by RFC 4253.
+                    SocketAbstraction.Send(_socket, Encoding.UTF8.GetBytes(string.Format(CultureInfo.InvariantCulture, "{0}\x0D\x0A", ClientVersion)));
+
                     Match versionMatch;
 
                     //  Get server version from the server,
@@ -638,8 +636,6 @@ namespace Renci.SshNet
                     {
                         throw new SshConnectionException(string.Format(CultureInfo.CurrentCulture, "Server version '{0}' is not supported.", version), DisconnectReason.ProtocolVersionNotSupported);
                     }
-
-                    SocketAbstraction.Send(_socket, Encoding.UTF8.GetBytes(string.Format(CultureInfo.InvariantCulture, "{0}\x0D\x0A", ClientVersion)));
 
                     //  Register Transport response messages
                     RegisterMessage("SSH_MSG_DISCONNECT");
@@ -1325,13 +1321,6 @@ namespace Renci.SshNet
             var handlers = KeyExchangeDhReplyMessageReceived;
             if (handlers != null)
                 handlers(this, new MessageEventArgs<KeyExchangeDhReplyMessage>(message));
-        }
-
-        internal void OnKeyExchangeEcdhReplyMessageReceived(KeyExchangeEcdhReplyMessage message)
-        {
-            var handlers = KeyExchangeEcdhReplyMessageReceived;
-            if (handlers != null)
-                handlers(this, new MessageEventArgs<KeyExchangeEcdhReplyMessage>(message));
         }
 
         /// <summary>
